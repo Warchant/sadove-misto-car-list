@@ -32,6 +32,7 @@ import {
 import { cn } from "./lib/utils";
 
 const GOOGLE_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
+const STORED_AUTH_KEY = "zhk-car-list.google-auth";
 
 const SHEET_CONFIG = {
   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined,
@@ -61,9 +62,51 @@ function normalize(value: string) {
   return value.trim().toLocaleLowerCase("uk");
 }
 
+function getStoredAccessToken() {
+  const storedValue = localStorage.getItem(STORED_AUTH_KEY);
+
+  if (!storedValue) {
+    return "";
+  }
+
+  try {
+    const storedAuth = JSON.parse(storedValue) as {
+      accessToken?: string;
+      expiresAt?: number;
+    };
+
+    if (!storedAuth.accessToken || !storedAuth.expiresAt) {
+      localStorage.removeItem(STORED_AUTH_KEY);
+      return "";
+    }
+
+    if (Date.now() >= storedAuth.expiresAt) {
+      localStorage.removeItem(STORED_AUTH_KEY);
+      return "";
+    }
+
+    return storedAuth.accessToken;
+  } catch {
+    localStorage.removeItem(STORED_AUTH_KEY);
+    return "";
+  }
+}
+
+function storeAccessToken(accessToken: string, expiresInSeconds?: number) {
+  const expiresAt = Date.now() + Math.max((expiresInSeconds ?? 3600) - 60, 60) * 1000;
+
+  localStorage.setItem(
+    STORED_AUTH_KEY,
+    JSON.stringify({
+      accessToken,
+      expiresAt,
+    }),
+  );
+}
+
 function App() {
   const [tokenClient, setTokenClient] = useState<GoogleTokenClient | null>(null);
-  const [accessToken, setAccessToken] = useState("");
+  const [accessToken, setAccessToken] = useState(getStoredAccessToken);
   const [records, setRecords] = useState<CarRecord[]>([]);
   const [query, setQuery] = useState("");
   const [brandFilter, setBrandFilter] = useState("all");
@@ -104,6 +147,7 @@ function App() {
             }
 
             if (response.access_token) {
+              storeAccessToken(response.access_token, response.expires_in);
               setAccessToken(response.access_token);
               setError("");
             }
@@ -256,6 +300,7 @@ function App() {
   }
 
   function signOut() {
+    localStorage.removeItem(STORED_AUTH_KEY);
     setAccessToken("");
     setRecords([]);
     setNotice("");
@@ -277,9 +322,9 @@ function App() {
               <Car className="h-6 w-6" aria-hidden="true" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold tracking-normal">Авто ЖХК</h1>
+              <h1 className="text-xl font-semibold tracking-normal">Автомобілі в "Садове місто 2"</h1>
               <p className="text-sm text-muted-foreground">
-                Номери авто, телефони, марки та кольори
+                Номери авто, телефони, марки
               </p>
             </div>
           </div>
