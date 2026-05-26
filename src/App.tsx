@@ -3,6 +3,7 @@ import {
   ArrowDownAZ,
   ArrowUpAZ,
   Car,
+  ChevronDown,
   Loader2,
   LogIn,
   LogOut,
@@ -40,6 +41,7 @@ const SHEET_CONFIG = {
 
 type SortKey = "plate" | "phone" | "brand" | "color";
 type SortDirection = "asc" | "desc";
+type MobilePanel = "add" | "filters" | "table";
 
 const emptyRecord: NewCarRecord = {
   plate: "",
@@ -74,6 +76,13 @@ function App() {
   const [deletingRow, setDeletingRow] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [openMobilePanels, setOpenMobilePanels] = useState<
+    Record<MobilePanel, boolean>
+  >({
+    add: false,
+    filters: false,
+    table: true,
+  });
 
   const isConfigured = Boolean(SHEET_CONFIG.clientId && SHEET_CONFIG.sheetId);
   const canUseSheets = isConfigured && Boolean(accessToken);
@@ -252,6 +261,13 @@ function App() {
     setNotice("");
   }
 
+  function toggleMobilePanel(panel: MobilePanel) {
+    setOpenMobilePanels((current) => ({
+      ...current,
+      [panel]: !current[panel],
+    }));
+  }
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8">
@@ -337,17 +353,41 @@ function App() {
           </div>
         ) : (
           <div className="grid gap-5 py-5 lg:grid-cols-[360px_1fr]">
-            <aside className="space-y-5">
+            <aside className="space-y-3 lg:space-y-5">
               <form
-                className="rounded-md border border-border bg-card p-4 shadow-soft"
+                className="overflow-hidden rounded-md border border-border bg-card shadow-soft lg:p-4"
                 onSubmit={handleAddRecord}
               >
-                <div className="mb-4 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left lg:hidden"
+                  onClick={() => toggleMobilePanel("add")}
+                  aria-expanded={openMobilePanels.add}
+                >
+                  <span className="inline-flex items-center gap-2 text-base font-semibold">
+                    <Plus className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                    Додати авто
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "h-5 w-5 text-muted-foreground transition-transform",
+                      openMobilePanels.add && "rotate-180",
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+
+                <div className="mb-4 hidden items-center justify-between gap-3 lg:flex">
                   <h2 className="text-base font-semibold">Додати авто</h2>
                   <Plus className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 </div>
 
-                <div className="space-y-3">
+                <div
+                  className={cn(
+                    "space-y-3 px-4 pb-4 lg:block lg:px-0 lg:pb-0",
+                    !openMobilePanels.add && "hidden",
+                  )}
+                >
                   <label className="block text-sm font-medium">
                     Номер авто
                     <Input
@@ -433,12 +473,39 @@ function App() {
                 </Button>
               </form>
 
-              <div className="rounded-md border border-border bg-card p-4 shadow-soft">
-                <div className="mb-4 flex items-center gap-2">
+              <div className="overflow-hidden rounded-md border border-border bg-card shadow-soft lg:p-4">
+                <button
+                  type="button"
+                  className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left lg:hidden"
+                  onClick={() => toggleMobilePanel("filters")}
+                  aria-expanded={openMobilePanels.filters}
+                >
+                  <span className="inline-flex items-center gap-2 text-base font-semibold">
+                    <SlidersHorizontal
+                      className="h-5 w-5 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    Фільтри
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "h-5 w-5 text-muted-foreground transition-transform",
+                      openMobilePanels.filters && "rotate-180",
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+
+                <div className="mb-4 hidden items-center gap-2 lg:flex">
                   <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
                   <h2 className="text-base font-semibold">Фільтри</h2>
                 </div>
-                <div className="space-y-3">
+                <div
+                  className={cn(
+                    "space-y-3 px-4 pb-4 lg:block lg:px-0 lg:pb-0",
+                    !openMobilePanels.filters && "hidden",
+                  )}
+                >
                   <label className="block text-sm font-medium">
                     Марка
                     <Select
@@ -506,8 +573,33 @@ function App() {
               </div>
             </aside>
 
-            <section className="min-w-0">
-              <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-background/95 px-4 pb-4 backdrop-blur sm:static sm:mx-0 sm:border-b-0 sm:bg-transparent sm:px-0 sm:pb-3">
+            <section className="min-w-0 overflow-hidden rounded-md border border-border bg-card shadow-soft lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none">
+              <button
+                type="button"
+                className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left lg:hidden"
+                onClick={() => toggleMobilePanel("table")}
+                aria-expanded={openMobilePanels.table}
+              >
+                <span className="inline-flex items-center gap-2 text-base font-semibold">
+                  <Search className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                  Таблиця
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "h-5 w-5 text-muted-foreground transition-transform",
+                    openMobilePanels.table && "rotate-180",
+                  )}
+                  aria-hidden="true"
+                />
+              </button>
+
+              <div
+                className={cn(
+                  "lg:block",
+                  !openMobilePanels.table && "hidden",
+                )}
+              >
+              <div className="sticky top-0 z-10 border-b border-border bg-card px-4 pb-4 backdrop-blur lg:static lg:border-b-0 lg:bg-transparent lg:px-0 lg:pb-3">
                 <label className="relative block">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -530,7 +622,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="space-y-3 sm:hidden">
+              <div className="space-y-3 px-4 pb-4 sm:hidden">
                 {visibleRecords.map((record) => (
                   <article
                     key={record.id}
@@ -620,10 +712,11 @@ function App() {
               </div>
 
               {!isLoading && visibleRecords.length === 0 ? (
-                <div className="rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                <div className="mx-4 mb-4 rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground lg:mx-0 lg:mb-0">
                   Немає рядків для поточного пошуку або фільтрів.
                 </div>
               ) : null}
+              </div>
             </section>
           </div>
         )}
